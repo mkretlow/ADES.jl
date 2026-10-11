@@ -1,0 +1,21 @@
+name = "ADES"
+uuid = "2bce1745-d433-4e3d-9455-c5eeb633b291"
+authors = ["Mike Kretlow <mike@kretlow.de>"]
+version = "0.1.0"
+
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+EzXML = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
+Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+
+[compat]
+Dates = "1"
+EzXML = "1"
+Tables = "1"
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

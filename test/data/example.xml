@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ades version="2022">
+  <obsBlock>
+    <obsContext>
+      <observatory><mpcCode>568</mpcCode></observatory>
+      <submitter><name>C. Submitter</name><institution>Example University</institution></submitter>
+      <measurers><name>C. Submitter</name></measurers>
+      <telescope><design>reflector</design><aperture>2.2</aperture><detector>CCD</detector></telescope>
+    </obsContext>
+    <obsData>
+      <optical>
+        <provID>2023 XY1</provID>
+        <mode>CCD</mode>
+        <stn>568</stn>
+        <obsTime>2023-12-31T23:59:60.5Z</obsTime>
+        <ra>10.5</ra>
+        <dec>-1.25</dec>
+        <astCat>Gaia3</astCat>
+        <localUse><myTag a="1">custom</myTag></localUse>
+      </optical>
+      <occultation>
+        <permID>319</permID>
+        <mode>OCC</mode>
+        <stn>275</stn>
+        <sys>ICRF_KM</sys>
+        <ctr>399</ctr>
+        <pos1>1833.310</pos1>
+        <pos2>-1882.459</pos2>
+        <pos3>-3409.399</pos3>
+        <obsTime>2010-10-22T12:22:12.59Z</obsTime>
+        <raStar>36.443232822</raStar>
+        <decStar>5.964539565</decStar>
+        <deltaRA>0.0000</deltaRA>
+        <deltaDec>0.0000</deltaDec>
+        <rmsRA>0.0129</rmsRA>
+        <rmsDec>0.0157</rmsDec>
+        <rmsCorr>-0.874</rmsCorr>
+        <astCat>Gaia3E</astCat>
+      </occultation>
+    </obsData>
+  </obsBlock>
+  <radar>
+    <permID>101955</permID>
+    <trx>253</trx>
+    <rcv>251</rcv>
+    <obsTime>2011-09-21T09:30:00Z</obsTime>
+    <delay>1234.5678901234</delay>
+    <rmsDelay>1.0</rmsDelay>
+    <frq>8560</frq>
+  </radar>
+</ades>
