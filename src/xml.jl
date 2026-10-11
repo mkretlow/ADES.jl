@@ -99,7 +99,8 @@ end
     write_xml(dest, data::ADESData)
 
 Write `data` as ADES XML to `dest` (a file path or an `IO`). Elements are written in
-the order the ADES schema requires.
+the order the ADES schema requires. Since an `obsData` element may hold only one record
+kind, a block mixing kinds is written as consecutive `obsBlock`s with the same context.
 """
 function write_xml(io::IO, d::ADESData)
     doc = EzXML.XMLDocument()
@@ -112,21 +113,24 @@ function write_xml(io::IO, d::ADESData)
                 _write_record(root, o)
             end
         else
-            blk = EzXML.addelement!(root, "obsBlock")
-            ctx = EzXML.addelement!(blk, "obsContext")
-            for s in b.context.sections
-                if isempty(s.entries)
-                    EzXML.addelement!(ctx, s.name, s.value)
-                else
-                    sec = EzXML.addelement!(ctx, s.name)
-                    for (k, v) in s.entries
-                        EzXML.addelement!(sec, k, v)
+            # obsData may hold only one record kind: split mixed blocks
+            for run in (isempty(b.observations) ? [Observation[]] : _kind_runs(b.observations))
+                blk = EzXML.addelement!(root, "obsBlock")
+                ctx = EzXML.addelement!(blk, "obsContext")
+                for s in b.context.sections
+                    if isempty(s.entries)
+                        EzXML.addelement!(ctx, s.name, s.value)
+                    else
+                        sec = EzXML.addelement!(ctx, s.name)
+                        for (k, v) in s.entries
+                            EzXML.addelement!(sec, k, v)
+                        end
                     end
                 end
-            end
-            data = EzXML.addelement!(blk, "obsData")
-            for o in b.observations
-                _write_record(data, o)
+                data = EzXML.addelement!(blk, "obsData")
+                for o in run
+                    _write_record(data, o)
+                end
             end
         end
     end

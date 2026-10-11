@@ -67,7 +67,8 @@ end
         dx = parse_xml(xml_string(d))
         @test observations(dx) == obs
         @test dx.version == d.version
-        @test [b.context === nothing for b in dx.blocks] == [b.context === nothing for b in d.blocks]
+        # blocks mixing record kinds are split, since obsData may hold only one kind
+        @test count(b -> b.context === nothing, dx.blocks) == count(b -> b.context === nothing, d.blocks)
         c1, c2 = d.blocks[1].context, dx.blocks[1].context
         @test [(s.name, s.value, s.entries) for s in c1.sections] ==
               [(s.name, s.value, s.entries) for s in c2.sections]
@@ -191,6 +192,144 @@ end
     @test has2("location group incomplete: missing sys")
     @test has2("remarks contains '|'")
     @test has2("obsContext lacks observatory/mpcCode")
+end
+
+@testset "designations" begin
+    # (packed, permID, provID, trkSub); cases from the IAU-ADES packUtil test suite
+    cases = [
+        ("00001       ", "1", nothing, nothing),
+        ("z9999       ", "619999", nothing, nothing),
+        ("~0000       ", "620000", nothing, nothing),
+        ("C1234K14A00A", "121234", "2014 AA", nothing),
+        ("     K14Aa0A", nothing, "2014 AA360", nothing),
+        ("     K14Az9Q", nothing, "2014 AQ619", nothing),
+        ("     _QC0aEM", nothing, "2026 CZ6190", nothing),
+        ("01234T3S1438", "1234", "1438 T-3", nothing),
+        ("07968J96N020", "7968", "A/1996 N2", nothing),
+        ("    AJ96N020", nothing, "A/1996 N2", nothing),
+        ("     I98V00F", nothing, "1898 VF", nothing),
+        ("     A00001X", nothing, nothing, "A00001X"),
+        ("     K00001X", nothing, nothing, "K00001X"),
+        ("     PLS2a10", nothing, nothing, "PLS2a10"),
+        ("0073P       ", "73P", nothing, nothing),
+        ("    CK88AA30", nothing, "C/2088 A103", nothing),
+        ("    PJ98Q54P", nothing, "P/1998 QP54", nothing),
+        ("    CK33L89c", nothing, "C/2033 L89-C", nothing),
+        ("0141PJ94P01a", "141P-A", "P/1994 P1-A", nothing),
+        ("0073P     af", "73P-AF", nothing, nothing),
+        ("0073P      g", "73P-G", nothing, nothing),
+        ("J001SG10J010", "Jupiter 1", "S/1610 J 1", nothing),
+        ("    SK10JB10", nothing, "S/2010 J 111", nothing),
+    ]
+    for (packed, perm, prov, trk) in cases
+        @test unpack_designation(packed) == (perm, prov, trk)
+        @test pack_designation(perm, prov, trk) == packed
+    end
+    for bad in ("            ", "00000       ", "0000P       ", "1234C       ", "U000S       ",
+                "K221S       ", "_0000       ", "     A00 01 ", "0a001K14A00A")
+        @test_throws ArgumentError unpack_designation(bad)
+    end
+    for ids in (("0", nothing, nothing), ("(45) 1", nothing, nothing), ("12345P", nothing, nothing),
+                ("1", "P/1994 P1-A", nothing), ("141P-C", "P/1994 P1-A", nothing),
+                (nothing, "568 T-1", nothing), (nothing, "2014 AA620", nothing),
+                (nothing, "1700 AA", nothing), (nothing, "2001 IA", nothing),
+                (nothing, "P/1998 QP54-A", nothing), (nothing, "S/2001 N 0", nothing),
+                (nothing, nothing, "A1234567"), (nothing, nothing, "Ab3%xx"), (nothing, nothing, nothing))
+        @test_throws ArgumentError pack_designation(ids...)
+    end
+    # a trkSub is not written when there is a permanent or provisional designation
+    @test pack_designation("433", missing, "abc") == "00433       "
+end
+
+@testset "MPC 80-column" begin
+    path = joinpath(DATA, "example.obs")
+    txt = read(path, String)
+    datalines(s) = filter(l -> length(l) == 80, split(s, "\n"))
+
+    d = read_ades(path)
+    @test d isa ADESData
+    @test read_mpc80(path) == d || observations(read_mpc80(path)) == observations(d)
+    @test length(d.blocks) == 2
+    @test length(d) == 9
+    @test [o.kind for o in d] == [fill(:optical, 8); :radar]
+
+    ctx = d.blocks[1].context
+    @test ctx["observatory"]["mpcCode"] == "Z80"
+    @test ctx["submitter"]["name"] == "A. Observer"
+    @test ctx["submitter"]["institution"] == "Example Observatory, Somewhere"
+    @test getall(ctx["observers"], "name") == ["A. Observer", "B. Helper"]
+    @test ctx["telescope"]["aperture"] == "0.41"
+    @test ctx["telescope"]["fRatio"] == "6.3"
+    @test ctx["telescope"]["design"] == "Schmidt-Cassegrain"
+    @test getall(ctx["comment"], "line") ==
+          ["NET Gaia-DR3", "ACK Batch 001", "Positions are made up for testing."]
+
+    o1, o2, o3, o4, o5, o6, o7, o8, rad = observations(d)
+    @test o1.permID == "433"
+    @test rawvalue(o1, :obsTime) == "2024-01-15T21:03:11.808Z"
+    @test rawvalue(o1, :precTime) == "10"
+    @test rawvalue(o1, :ra) == "120.12346"
+    @test rawvalue(o1, :precRA) == "0.01"
+    @test rawvalue(o1, :dec) == "20.12344"
+    @test rawvalue(o1, :precDec) == "0.1"
+    @test o1.astCat == "Gaia3E"
+    @test o1.subFmt == "M92"
+    @test o2.provID == "2024 AB12"
+    @test o2.disc == "*"
+    @test o2.notes == "K"            # Z80 does not use program codes
+    @test o2.ref == "MPS 1229401"
+    @test o2.dec === -5.5
+    @test rawvalue(o2, :ra) == "121.000000"
+    @test o3.trkSub == "ABC1234" && o3.mode == "CMO" && o3.astCat == "UNK"
+    @test o4.deprecated == "X" && o4.mag === missing && o4.band === missing
+    @test o5.subFrm == "B1950.0"
+    @test o6.prog == "01"            # F51 uses program codes
+    @test !haskey(o6, :notes)
+    @test (o7.sys, o7.ctr, o7.pos1) == ("ICRF_KM", 399, -5634.1734)
+    @test (o8.sys, rawvalue(o8, :pos2), o8.pos3) == ("WGS84", "+43.7900", 1200.0)
+    @test rad.delay === 1.508853604
+    @test rawvalue(rad, :rmsDelay) == "15"
+    @test (rad.trx, rad.rcv, rad.com, rad.frq) == ("251", "251", 0, 2380.0)
+    @test rawvalue(rad, :obsTime) == "1975-01-22T04:30:00Z"
+
+    # 80 -> ADES -> 80 and 80 -> ADES XML -> 80 reproduce the data lines
+    @test datalines(mpc80_string(d)) == datalines(txt)
+    @test datalines(mpc80_string(parse_xml(xml_string(d)))) == datalines(txt)
+    @test datalines(mpc80_string(parse_psv(psv_string(d)))) == datalines(txt)
+    mktempdir() do dir
+        p = joinpath(dir, "out.obs")
+        write_ades(p, d)
+        @test datalines(read(p, String)) == datalines(txt)
+    end
+
+    # radar records with delay and Doppler are split
+    r2 = parse_mpc80("""
+        00433         R1975 01 22.187500    15088536040-        130000 23800251 AJ102251
+        00433         r1975 01 22.187500S        150000         200000      251 AJ102251
+        """)
+    a, b = observations(r2)
+    @test haskey(a, :delay) && !haskey(a, :doppler)
+    @test b.doppler === -13.0 && b.rmsDoppler === 20.0 && !haskey(b, :delay)
+
+    # submission mode drops elements the submission schema does not allow
+    s = read_mpc80(path; submission=true)
+    @test !any(o -> any(k -> haskey(o, k), (:subFmt, :precRA, :deprecated, :prog, :ref)), s)
+
+    # obsData holds one record kind, so the optical/radar block becomes two obsBlocks
+    @test count("<obsBlock>", xml_string(d)) == 3
+
+    # ADES without precision elements: precision follows the digits given
+    o = Observation(:optical; provID="2024 AB12", mode="CCD", stn="J95",
+                    obsTime="2024-01-15T21:03:11.808Z", ra="120.123457", dec="-20.12345",
+                    astCat="Gaia3E", mag="19.531", band="Gr", prog="01")
+    line = mpc80_string(ADESData(nothing, [o]))
+    @test line == "     K24A12B 1C2024 01 15.87722008 00 29.630-20 07 24.4          19.53GX     J95\n"
+    @test length(chomp(line)) == 80
+
+    @test_throws ArgumentError parse_mpc80("00433         C2024 01 15.87722 08 00 29.63 +20 07 24.4          11.2 GX     Z80 extra")
+    @test_throws ArgumentError parse_mpc80("     K10A00A  s2010 01 08.94792 1 - 5634.1734 - 2466.2657 - 3038.3924        C51")
+    @test_throws ArgumentError parse_mpc80("     K10A00A  S2010 01 08.94792 21 33 37.97 -01 50 47.6          19.5 V      C51")
+    @test_throws ArgumentError mpc80_string(read_ades(joinpath(DATA, "example.xml")))
 end
 
 @testset "display" begin

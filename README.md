@@ -4,10 +4,11 @@ Read, write and inspect astrometric observations in the IAU **Astrometry Data Ex
 Standard (ADES)**, the format the Minor Planet Center (MPC) uses for submitting and
 distributing observations of minor bodies.
 
-Both ADES serializations are supported:
+Both ADES serializations are supported, plus conversion from and to the old format:
 
 - **XML**: the canonical form, defined by the ADES XSD schema
 - **PSV**: pipe-separated values, the human-readable tabular form
+- **MPC 80-column** ("MPC1992", obs80): optical, roving, satellite and radar records
 
 Supported record types: `optical`, `offset`, `occultation`, `radar`, and the
 distribution records `opticalResidual` and `radarResidual`.
@@ -24,7 +25,7 @@ Pkg.develop(path="/path/to/ADES.jl")   # not yet registered
 ```julia
 using ADES
 
-data = read_ades("observations.psv")      # or .xml; format detected from content
+data = read_ades("observations.psv")      # or .xml / 80-column; format detected from content
 
 # observatory context of the first block
 ctx = data.blocks[1].context
@@ -44,9 +45,41 @@ rawvalue(obs, :dec) # "+20.123456" (exactly as in the file)
 julian_date(obs)    # UTC Julian date with sub-millisecond digits kept
 
 # convert between formats
-write_ades("observations.xml", data)      # extension picks XML or PSV
+write_ades("observations.xml", data)      # extension picks XML, PSV or 80-column (.obs/.mpc)
 write_psv("observations.psv", data; align=true)
 ```
+
+### MPC 80-column format
+
+```julia
+data = read_mpc80("observations.obs")     # also detected by read_ades
+write_ades("observations.xml", data)      # 80-column -> ADES XML
+write_mpc80("back.obs", data)             # ADES -> 80-column
+mpc80_string(data)
+
+unpack_designation("00433J98X00A")        # ("433", "1998 XA", nothing)
+pack_designation(nothing, "C/1995 O1", nothing)   # "    CJ95O010"
+```
+
+The conversion follows the official IAU-ADES converters:
+
+- Sexagesimal RA/Dec become decimal degrees with matching digits. `precRA`, `precDec`
+  and `precTime` keep the original precision, so 80-column → ADES → 80-column reproduces
+  the data lines exactly, also via XML or PSV.
+- Header lines map onto `obsContext`: `COD` → observatory, `CON` → submitter, `OBS`/`MEA`
+  → observers/measurers, `TEL` → telescope (aperture, f-ratio, design and detector are
+  parsed where possible), `COM` → comment. `NET`, `ACK`, `AC2`, `BND` and `NUM` are kept
+  as comment lines and written back as headers.
+- Column 14 becomes `prog` for stations that use program codes (`PROGRAM_CODE_SITES`),
+  otherwise `notes`. Codes `X`/`x` set `deprecated`, `A` sets `subFrm = B1950.0`.
+- Radar records with both delay and Doppler become two ADES records, as ADES requires.
+- `read_mpc80(...; submission=true)` leaves out elements the ADES submission schema does
+  not allow (`subFmt`, `prec*`, `subFrm`, `deprecated`, `prog`, `ref`).
+
+Writing 80-column data from ADES drops what that format cannot hold (uncertainties,
+remarks, photometry details, ...). Without `prec*` elements, RA/Dec are written with the
+precision implied by their number of decimals and times to 1e-6 day.
+
 
 ### Values keep their precision
 
@@ -108,7 +141,9 @@ full XSD validation. For that, use the official tools in
 | `read_ades`, `parse_ades` | read a file or string, XML or PSV auto-detected |
 | `read_xml`, `parse_xml`, `write_xml`, `xml_string` | XML I/O |
 | `read_psv`, `parse_psv`, `write_psv`, `psv_string` | PSV I/O |
-| `write_ades` | write; format chosen from the extension or `format=:xml/:psv` |
+| `read_mpc80`, `parse_mpc80`, `write_mpc80`, `mpc80_string` | MPC 80-column I/O |
+| `write_ades` | write; format chosen from the extension or `format=:xml/:psv/:mpc80` |
+| `pack_designation`, `unpack_designation` | MPC packed designations (columns 1-12) |
 | `observations` | all observations as a `Vector{Observation}` |
 | `obstable` | column table of observations (Tables.jl) |
 | `designation` | `permID`, else `provID`, else `artSat`, else `trkSub` |
@@ -125,7 +160,10 @@ full XSD validation. For that, use the official tools in
 - `localUse` content is kept verbatim for XML but cannot be represented in PSV.
 - In PSV, the record type of a table is inferred from its columns (e.g. `raStar` means
   `occultation`, `trx`/`delay`/`doppler` means `radar`).
-- Converting from and to the old MPC 80-column format is not implemented yet.
+- An XML `obsData` element may hold only one record type, so a block that mixes types is
+  written as several `obsBlock`s sharing the same context.
+- 80-column output supports `optical` and `radar` records; `offset`, `occultation` and
+  residual records have no 80-column form.
 
 ## References
 

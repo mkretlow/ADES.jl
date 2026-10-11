@@ -1,0 +1,24 @@
+COD Z80
+CON A. Observer, Example Observatory, Somewhere
+OBS A. Observer, B. Helper
+MEA A. Observer
+TEL 0.41-m f/6.3 Schmidt-Cassegrain + CCD
+NET Gaia-DR3
+ACK Batch 001
+COM Positions are made up for testing.
+00433         C2024 01 15.87722 08 00 29.63 +20 07 24.4          11.2 GX     Z80
+     K24A12B*KC2024 01 15.87229008 04 00.000-05 30 00.00         19.53VU~44BVZ80
+     ABC1234  B2024 01 15.88    08 10 00.0  -05 24 00            18.7 R      Z80
+00433         X2024 01 15.87722 08 00 29.63 +20 07 24.4                X     Z80
+00433         A1950 03 01.12345 08 00 29.6  +20 07 24                        Z80
+COD F51
+CON B. Survey
+MEA B. Survey
+TEL 1.8-m Ritchey-Chretien + CCD
+     K24A12B 1C2024 01 16.10000008 05 00.000-05 31 00.00         20.12wU     F51
+     K10A00A  S2010 01 08.94792 21 33 37.97 -01 50 47.6          19.5 V      C51
+     K10A00A  s2010 01 08.94792 1 - 5634.1734 - 2466.2657 - 3038.3924        C51
+     K05Y00A  V2005 12 27.16076 12 05 13.72 +20 40 40.1          17.8 R      247
+     K05Y00A  v2005 12 27.16076 1   255.0001   +43.7900  1200                247
+00433         R1975 01 22.187500    15088536040                23800251 AJ102251
+00433         r1975 01 22.187500S        150000                     251 AJ102251
