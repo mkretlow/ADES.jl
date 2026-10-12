@@ -17,7 +17,7 @@ distribution records `opticalResidual` and `radarResidual`.
 
 ```julia
 using Pkg
-Pkg.develop(path="/path/to/ADES.jl")   # not yet registered
+Pkg.add(url="https://github.com/mkretlow/ADES.jl")   # not yet registered
 ```
 
 ## Quick start
