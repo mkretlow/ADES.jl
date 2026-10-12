@@ -18,5 +18,5 @@
 ! line Test data for ADES.jl; positions are made up.
 permID |provID    |trkSub |mode|stn |obsTime                 |ra          |dec        |rmsRA|rmsDec|astCat |mag  |band|disc|notes|remarks
 433    |          |       |CCD |J95 |2024-01-15T21:03:12.25Z |120.1234567 |+20.123456 |0.12 |0.11  |Gaia3E |11.2 |G   |    |     |
-       |2024 AB12 |       |CCD |J95 |2024-01-15T21:10:05.5Z  |121.0000001 |-05.500001 |0.20 |0.18  |Gaia3E |19.5 |G   |*   |K    |fast mover
+       |2024 AB12 |       |CCD |J95 |2024-01-15T21:10:05.5Z  |121.0000001 |-5.500001  |0.20 |0.18  |Gaia3E |19.5 |G   |*   |K    |fast mover
        |          |XY12345|CCD |J95 |2024-01-15T21:20:00.123456Z|122.5     |-5.4       |     |      |Gaia3E |     |    |    |     |

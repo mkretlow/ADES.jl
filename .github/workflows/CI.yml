@@ -33,4 +33,14 @@ jobs:
           version: ${{ matrix.version }}
       - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
+      # official XSDs for the schema validation tests (xmllint is not available on Windows)
+      - uses: actions/checkout@v7
+        if: runner.os != 'Windows'
+        with:
+          repository: IAU-ADES/ADES-Master
+          ref: f4158f96a049b83dfcf848fa33eaac4391db9460
+          path: ADES-Master
+          sparse-checkout: xsd
       - uses: julia-actions/julia-runtest@v1
+        env:
+          ADES_MASTER: ${{ runner.os != 'Windows' && format('{0}/ADES-Master', github.workspace) || '' }}

@@ -44,7 +44,7 @@
     <trx>253</trx>
     <rcv>251</rcv>
     <obsTime>2011-09-21T09:30:00Z</obsTime>
-    <delay>1234.5678901234</delay>
+    <delay>1234.567890123</delay>
     <rmsDelay>1.0</rmsDelay>
     <frq>8560</frq>
   </radar>

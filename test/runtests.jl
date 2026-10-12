@@ -1,4 +1,5 @@
 using ADES
+using Aqua
 using Dates
 using Test
 const Tables = ADES.Tables
@@ -55,7 +56,7 @@ end
     @test occ.ctr === 399
     @test occ.rmsCorr === -0.874
     @test rawvalue(occ, :deltaRA) == "0.0000"
-    @test rad.delay === 1234.5678901234
+    @test rad.delay === 1234.567890123
     @test rad.trx == "253"
 end
 
@@ -158,7 +159,7 @@ end
     @test eltype(t.obsTime) == Union{Missing,DateTime}
     @test isequal(t.mag, [11.2, 19.5, missing])
     @test keys(t)[1:4] == (:kind, :permID, :provID, :trkSub)
-    @test obstable(d; raw=true).dec == ["+20.123456", "-05.500001", "-5.4"]
+    @test obstable(d; raw=true).dec == ["+20.123456", "-5.500001", "-5.4"]
 
     @test Tables.istable(d)
     @test Tables.columns(d).ra == t.ra
@@ -340,6 +341,35 @@ end
     @test startswith(sprint(show, o), "Observation(:optical, provID=\"2023 XY1\"")
     @test occursin("astCat", sprint(show, MIME"text/plain"(), o))
     @test occursin("submitter", sprint(show, MIME"text/plain"(), d.blocks[1].context))
+end
+
+# Needs xmllint and a checkout of IAU-ADES/ADES-Master in ADES_MASTER (CI provides both
+# on Linux and macOS); skipped when ADES_MASTER is unset.
+@testset "XSD validation" begin
+    master = get(ENV, "ADES_MASTER", "")
+    if isempty(master)
+        @info "Skipping XSD validation: ADES_MASTER is not set"
+    else
+        xmllint = Sys.which("xmllint")
+        @test xmllint !== nothing
+        xsd = joinpath(master, "xsd", "general.xsd")
+        files = ("example.psv", "example.xml", "example.obs")
+        docs = [f => read_ades(joinpath(DATA, f)) for f in files]
+        # one block mixing all record kinds: write_xml must split it into one obsData per kind
+        mixed = ADESData(docs[2][2].blocks[1].context, reduce(vcat, observations.(last.(docs))))
+        push!(docs, "mixed" => mixed)
+        mktempdir() do dir
+            for (name, d) in docs
+                p = joinpath(dir, name * ".xml")
+                write_xml(p, d)
+                @test success(`$xmllint --noout --schema $xsd $p`)
+            end
+        end
+    end
+end
+
+@testset "Aqua" begin
+    Aqua.test_all(ADES)
 end
 
 end
