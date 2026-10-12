@@ -347,11 +347,12 @@ end
 # on Linux and macOS); skipped when ADES_MASTER is unset.
 @testset "XSD validation" begin
     master = get(ENV, "ADES_MASTER", "")
+    xmllint = Sys.which("xmllint")
     if isempty(master)
         @info "Skipping XSD validation: ADES_MASTER is not set"
+    elseif xmllint === nothing
+        @test xmllint !== nothing   # ADES_MASTER is set, so a missing xmllint is a failure
     else
-        xmllint = Sys.which("xmllint")
-        @test xmllint !== nothing
         xsd = joinpath(master, "xsd", "general.xsd")
         files = ("example.psv", "example.xml", "example.obs")
         docs = [f => read_ades(joinpath(DATA, f)) for f in files]
