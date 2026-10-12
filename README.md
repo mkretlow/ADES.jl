@@ -1,6 +1,6 @@
 # ADES.jl
 
-[![CI](https://github.com/mkretlow/ADES.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/mkretlow/ADES.jl/actions/workflows/CI.yml)
+[![CI](https://github.com/mkretlow/ADES.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/mkretlow/ADES.jl/actions/workflows/CI.yml) [![License: MIT](https://img.shields.io/github/license/mkretlow/ADES.jl)](LICENSE)
 
 Read, write and inspect astrometric observations in the IAU **Astrometry Data Exchange
 Standard (ADES)**, the format the Minor Planet Center (MPC) uses for submitting and
