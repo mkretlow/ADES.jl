@@ -1,0 +1,2 @@
+# Observation fixtures are column-exact: keep LF line endings on every platform
+test/data/* text eol=lf

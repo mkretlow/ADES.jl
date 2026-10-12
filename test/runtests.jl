@@ -244,7 +244,7 @@ end
 @testset "MPC 80-column" begin
     path = joinpath(DATA, "example.obs")
     txt = read(path, String)
-    datalines(s) = filter(l -> length(l) == 80, split(s, "\n"))
+    datalines(s) = filter(l -> length(l) == 80, split(s, r"\r?\n"))
 
     d = read_ades(path)
     @test d isa ADESData
