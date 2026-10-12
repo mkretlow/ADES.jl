@@ -42,7 +42,7 @@ jobs:
           path: ADES-Master
           sparse-checkout: xsd
       - if: runner.os == 'Linux'
-        run: sudo apt-get install -y --no-install-recommends libxml2-utils
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils
       - uses: julia-actions/julia-runtest@v1
         env:
           ADES_MASTER: ${{ runner.os != 'Windows' && format('{0}/ADES-Master', github.workspace) || '' }}
